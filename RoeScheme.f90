@@ -12,16 +12,10 @@ double precision		:: rho_l, u_l, H_l 														! left parameter
 double precision		:: rho_r, u_r, H_r 														! right parameter
 double precision(3)		:: v_temp1, v_temp2, v_temp3, deltaF_1, deltaF_2, deltaF_3
 double precision(3)		:: D, F_i_1, F_i, Flux
-! double precision(N)		:: rho, u, H
 double precision(3,3)	:: A
 
 intent (in) gamma, rho_l, u_l, H_l, rho_r, u_r, H_r
 intent (out) Flux
-
-! calculation tilda variables
-! rho_tilda = sqrt(rho(i) * rho(i+1))
-! u_tilda = (sqrt(rho(i)) * u(i) + sqrt(rho(i+1)) * u(i+1)) / (sqrt(rho(i)) + sqrt(rho(i+1)))
-! H_tilda = (sqrt(rho(i)) * H(i) + sqrt(rho(i+1)) * H(i+1)) / (sqrt(rho(i)) + sqrt(rho(i+1)))
 
 ! calculation tilda variables
 rho_tilda = sqrt(rho_l * rho_r)
@@ -40,11 +34,6 @@ lambda_3 = u_tilda - c_tilda
 
 ! calc matrix A with Roe variables
 call (gamma, u_tilda, rho_tilda, E_tilda, A)
-
-! delta u, p, rho calculation
-! delta_u = u(i+1) - u(i)
-! delta_p = p(i+1) - p(i)
-! delta_rho = rho(i+1) - rho(i)
 
 ! delta u, p, rho calculation
 delta_u = u_r - u_l
