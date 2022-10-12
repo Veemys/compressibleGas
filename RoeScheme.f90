@@ -1,21 +1,20 @@
 ! Roe scheme for calculate fluxes vector
-subroutine roeScheme(gamma, rho_l, u_l, H_l, rho_r, u_r, H_r, Flux)
-
+subroutine roeScheme(gamma, Cv, rho_l, u_l, p_l, H_l, rho_r, u_r, p_r, H_r, Flux)
 implicit none
 
-integer 				:: i
-double precision		:: rho_tilda, u_tilda, H_tilda, c_tilda, p_tilda, T_tilda, E_tilda
-double precision		:: lambda_1, lambda_2, lambda_3
-double precision		:: delta_u, delta_p, delta_rho
-double precision		:: gamma
-double precision		:: rho_l, u_l, H_l 														! left parameter
-double precision		:: rho_r, u_r, H_r 														! right parameter
-double precision(3)		:: v_temp1, v_temp2, v_temp3, deltaF_1, deltaF_2, deltaF_3
-double precision(3)		:: D, F_i_1, F_i, Flux
-double precision(3,3)	:: A
+integer 							:: i
+double precision					:: rho_tilda, u_tilda, H_tilda, c_tilda, p_tilda, T_tilda, E_tilda
+double precision					:: lambda_1, lambda_2, lambda_3
+double precision					:: delta_u, delta_p, delta_rho
+double precision					:: gamma, Cv
+double precision					:: rho_l, u_l, H_l, p_l 														! left parameter
+double precision					:: rho_r, u_r, H_r, p_r 														! right parameter
+double precision, dimension(3)		:: v_temp1(3), v_temp2, v_temp3, deltaF_1, deltaF_2, deltaF_3
+double precision, dimension(3)		:: D, F_i_1, F_i, Flux
+double precision, dimension(3,3)	:: A
 
-intent (in) gamma, rho_l, u_l, H_l, rho_r, u_r, H_r
-intent (out) Flux
+! intent (in) gamma, rho_l, u_l, H_l, rho_r, u_r, H_r
+! intent (out) Flux
 
 ! calculation tilda variables
 rho_tilda = sqrt(rho_l * rho_r)
@@ -24,7 +23,7 @@ H_tilda = (sqrt(rho_l) * H_l + sqrt(rho_r) * H_r) / (sqrt(rho_l) + sqrt(rho_r))
 
 c_tilda = sqrt((gamma - 1.0) * (H_tilda - 0.5 * u_tilda**2))
 p_tilda = (gamma - 1.0) / gamma * rho_tilda * (H_tilda - 0.5 * u_tilda**2)
-T_tilda = 1 / C_v * (H_tilda - p_tilda / rho_tilda)
+T_tilda = 1 / Cv * (H_tilda - p_tilda / rho_tilda)
 E_tilda = H_tilda - p_tilda / rho_tilda
 
 ! calculation eigenvalues maxrix A
@@ -33,7 +32,7 @@ lambda_2 = u_tilda + c_tilda
 lambda_3 = u_tilda - c_tilda
 
 ! calc matrix A with Roe variables
-call (gamma, u_tilda, rho_tilda, E_tilda, A)
+call calcAMatrix(gamma, u_tilda, rho_tilda, E_tilda, A)
 
 ! delta u, p, rho calculation
 delta_u = u_r - u_l
@@ -59,7 +58,7 @@ deltaF_2 = abs(u_tilda) * (delta_rho - delta_p / c_tilda**2) * v_temp2
 deltaF_3 = abs(u_tilda + c_tilda) * ((delta_p + rho_tilda * c_tilda * delta_u) / (2.0 * c_tilda**2)) * v_temp3
 
 ! flux'es calculate
-D = deltaF_1 deltaF_2 + deltaF_3
+D = deltaF_1 + deltaF_2 + deltaF_3
 Flux = 0.5 * (F_i_1 + F_i) - 0.5 * D
 
 end subroutine
@@ -68,8 +67,8 @@ end subroutine
 subroutine calcAMatrix(gamma, u, rho, E, A)
 implicit none
 
-double precision		:: gamma, u, rho, E
-double precision(3,3)	:: A
+double precision					:: gamma, u, rho, E
+double precision, dimension(3,3)	:: A
 intent (in)  gamma, u, rho, E
 intent (out) A
 
