@@ -10,7 +10,7 @@ double precision					:: gamma, Cv
 double precision					:: rho_l, u_l, H_l, p_l 														! left parameter
 double precision					:: rho_r, u_r, H_r, p_r 														! right parameter
 double precision, dimension(3)		:: v_temp1(3), v_temp2, v_temp3, deltaF_1, deltaF_2, deltaF_3
-double precision, dimension(3)		:: D, F_i_1, F_i, Flux
+double precision, dimension(3)		:: D, F_l, F_r, Flux
 double precision, dimension(3,3)	:: A
 
 ! intent (in) gamma, rho_l, u_l, H_l, rho_r, u_r, H_r
@@ -58,8 +58,10 @@ deltaF_2 = abs(u_tilda) * (delta_rho - delta_p / c_tilda**2) * v_temp2
 deltaF_3 = abs(u_tilda + c_tilda) * ((delta_p + rho_tilda * c_tilda * delta_u) / (2.0 * c_tilda**2)) * v_temp3
 
 ! flux'es calculate
+call calcFluxes(rho_l, u_l, p_l, H_l, F_l)
+call calcFluxes(rho_r, u_r, p_r, H_r, F_r)
 D = deltaF_1 + deltaF_2 + deltaF_3
-Flux = 0.5 * (F_i_1 + F_i) - 0.5 * D
+Flux = 0.5 * (F_l + F_r) - 0.5 * D
 
 end subroutine
 
@@ -83,5 +85,20 @@ A(2,3) = (gamma - 1.0)
 A(3,1) = (gamma - 1.0) * u**3 - gamma * u * E / rho
 A(3,2) = gamma * E / rho - 3.0 * (gamma - 1.0) * u**2 / 2.0
 A(3,3) = gamma * u
+
+end subroutine
+
+! calculation fluxes vector
+subroutine calcFluxes(rho, u, p, H, F)
+implicit none
+
+double precision					:: rho, u, p, H
+double precision, dimension(3)		:: F
+intent (in)  rho, u, p, H
+intent (out) F
+
+F(1) = rho * u
+F(2) = rho * u**2 + p
+F(3) = rho * H * u
 
 end subroutine
