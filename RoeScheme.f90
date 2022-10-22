@@ -1,5 +1,5 @@
 ! Roe scheme for calculate fluxes vector
-subroutine roeScheme(gamma, Cv, rho_l, u_l, p_l, H_l, rho_r, u_r, p_r, H_r, Flux)
+subroutine roeScheme(gamma, Cv, rho_l, u_l, p_l, rho_r, u_r, p_r, Flux)
 implicit none
 
 integer 							:: i
@@ -7,14 +7,19 @@ double precision					:: rho_tilda, u_tilda, H_tilda, c_tilda, p_tilda, T_tilda, 
 double precision					:: lambda_1, lambda_2, lambda_3
 double precision					:: delta_u, delta_p, delta_rho
 double precision					:: gamma, Cv
-double precision					:: rho_l, u_l, H_l, p_l 														! left parameter
-double precision					:: rho_r, u_r, H_r, p_r 														! right parameter
+double precision					:: rho_l, u_l, H_l, p_l 														! left parameters
+double precision					:: rho_r, u_r, H_r, p_r 														! right parameters
+double precision					:: enthalpy																		! functions declaration
 double precision, dimension(3)		:: v_temp1(3), v_temp2, v_temp3, deltaF_1, deltaF_2, deltaF_3
 double precision, dimension(3)		:: D, F_l, F_r, Flux
 double precision, dimension(3,3)	:: A
 
 ! intent (in) gamma, rho_l, u_l, H_l, rho_r, u_r, H_r
 ! intent (out) Flux
+
+! calculation enthalpy
+H_l = enthalpy(gamma, rho_l, p_l, u_l)
+H_r = enthalpy(gamma, rho_r, p_r, u_r)
 
 ! calculation tilda variables
 rho_tilda = sqrt(rho_l * rho_r)
@@ -62,43 +67,5 @@ call calcFluxes(rho_l, u_l, p_l, H_l, F_l)
 call calcFluxes(rho_r, u_r, p_r, H_r, F_r)
 D = deltaF_1 + deltaF_2 + deltaF_3
 Flux = 0.5 * (F_l + F_r) - 0.5 * D
-
-end subroutine
-
-! calculate A matrix
-subroutine calcAMatrix(gamma, u, rho, E, A)
-implicit none
-
-double precision					:: gamma, u, rho, E
-double precision, dimension(3,3)	:: A
-intent (in)  gamma, u, rho, E
-intent (out) A
-
-A(1,1) = 0
-A(1,2) = 1
-A(1,3) = 0
-
-A(2,1) = (gamma - 3.0) * u**2 / 2.0
-A(2,2) = (gamma - 3.0) * u
-A(2,3) = (gamma - 1.0)
-
-A(3,1) = (gamma - 1.0) * u**3 - gamma * u * E / rho
-A(3,2) = gamma * E / rho - 3.0 * (gamma - 1.0) * u**2 / 2.0
-A(3,3) = gamma * u
-
-end subroutine
-
-! calculation fluxes vector
-subroutine calcFluxes(rho, u, p, H, F)
-implicit none
-
-double precision					:: rho, u, p, H
-double precision, dimension(3)		:: F
-intent (in)  rho, u, p, H
-intent (out) F
-
-F(1) = rho * u
-F(2) = rho * u**2 + p
-F(3) = rho * H * u
 
 end subroutine
