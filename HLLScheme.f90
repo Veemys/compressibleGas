@@ -1,5 +1,5 @@
 ! HLL scheme for calculate fluxes vector
-subroutine hllScheme(gamma, Cv, rho_l, u_l, p_l, rho_r, u_r, p_r, Flux)
+subroutine hllScheme(gamma, Cv, rho_l, u_l, p_l, rho_r, u_r, p_r, u_dot, Flux)
 implicit none
 
 integer 							:: i
@@ -8,6 +8,7 @@ double precision					:: gamma, Cv
 double precision					:: rho_l, u_l, H_l, p_l, c_l														! left parameters
 double precision					:: rho_r, u_r, H_r, p_r, c_r 														! right parameters
 double precision					:: enthalpy, soundSpeed																! functions declaration
+double precision					:: u_dot																			! edge velo
 double precision					:: S_l, S_r
 double precision, dimension(3)		:: w_l, w_r, w_star
 double precision, dimension(3)		:: F_l, F_r, F_star, Flux
@@ -44,12 +45,12 @@ S_r = max(u_r + c_r, u_tilda + c_tilda)
 w_star = (S_r * w_r - S_l * w_l + F_l - F_r)/ (S_r - S_l)
 F_star = (S_r * F_l - S_l * F_r + S_l * S_r * (w_r - w_l)) / (S_r - S_l)
 
-if (S_l > 0.0) then
-	Flux = F_l
-else if (S_r < 0.0) then
-	Flux = F_r
+if (S_l > u_dot) then
+	Flux = F_l - u_dot * w_l
+else if (S_r < u_dot) then
+	Flux = F_r - u_dot * w_r
 else
-	Flux = F_star
+	Flux = F_star - u_dot * w_star
 end if
 
 end subroutine

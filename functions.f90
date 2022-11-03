@@ -71,3 +71,18 @@ w(2) = rho * u
 w(3) = rho * (H - p / rho)
 
 end subroutine
+
+! calculation variables from variables vector
+subroutine calcVariablesFromVector(gamma, rho, u, p, w)
+implicit none
+
+double precision					:: gamma, rho, u, p
+double precision, dimension(3)		:: w
+intent (in)  w
+intent (out) rho, u, p
+
+rho = w(1)
+u = w(2)/ rho
+p = (rho * u**2 / 2.0 - w(3)) / (1.0 - gamma / (gamma - 1.0))
+
+end subroutine
