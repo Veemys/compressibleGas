@@ -40,7 +40,7 @@ subroutine BC_open(gamma, rho_in, u_in, p_in, rho_out, u_out, p_out, norm, rho_0
 
 	double precision	:: rho_in, u_in, p_in, rho_out, u_out, p_out
 	double precision	:: norm, rho_0, P_0
-	double precision	:: c, u_n
+	double precision	:: gamma, c, u_n
 	double precision	:: soundSpeed
 
 	u_n = u_in * norm

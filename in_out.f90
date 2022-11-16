@@ -50,7 +50,7 @@ subroutine outputResult(Flux)
 end subroutine
 
 ! output fields to file
-subroutine writeField(filename, N, x, rho, u, p)
+subroutine writeField(filename, N, x,rho, u, p)
 	implicit none
 
 	character(30)							:: filename
@@ -69,4 +69,25 @@ subroutine writeField(filename, N, x, rho, u, p)
 
 	close(io)
 
+end subroutine
+
+! output channel form to file
+subroutine writeChannelForm(N, surface_x, surface_height)
+	implicit none
+	
+	integer, parameter					:: io = 666
+	integer								:: i, N
+	double precision, dimension(N+1)	:: surface_x, surface_height
+	
+	open (io, file = "channel_form.plt")
+	
+	write(io,*) "variables = x, h"
+	do i = 1, N + 1
+		
+		write(io,*) surface_x(i), surface_height(i)
+		
+	end do
+	
+	close(io)
+	
 end subroutine

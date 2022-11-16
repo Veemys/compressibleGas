@@ -28,38 +28,37 @@ program test
 	! call readParametersFromFile(io, inputFileData, gamma, Cv, rho_l, u_l, p_l, rho_r, u_r, p_r, u_dot)
 
 	open(io, file = inputFileData)
-
-	! old parameters set
 	
-	! read(io,*) L				 	! Domain length
-	! read(io,*) x_0					! Initial discontinuity position
-	! read(io,*) N					! Number of computing cells
-	! read(io,*) gamma				! Ratio of specific heats
-	! read(io,*) Cv					! Cv
-	! read(io,*) Time					! Output time
-	! read(io,*) CFL					! Courant number
-	! read(io,*) rho_l				! Initial density on left state
-	! read(io,*) u_l					! Initial velocity on left state
-	! read(io,*) p_l					! Initial pressure on left state
-	! read(io,*) rho_r				! Initial density on right state
-	! read(io,*) u_r					! Initial velocity on right state
-	! read(io,*) p_r					! Initial pressure on right
-	
-	! new parameters set
-	
-	read(io,*) gamma, Cv
-	read(io,*) L
-	read(io,*) p_l, p_r
-	read(io,*) rho_l, rho_r
-	read(io,*) u_l, u_r
-	read(io,*) N, x_0
-	read(io,*) Time, CFL
+	read(io,*) L				 	! Domain length
+	read(io,*) x_0					! Initial discontinuity position
+	read(io,*) N					! Number of computing cells
+	read(io,*) gamma				! Ratio of specific heats
+	read(io,*) Cv					! Cv
+	read(io,*) Time					! Output time
+	read(io,*) CFL					! Courant number
+	read(io,*) rho_l				! Initial density on left state
+	read(io,*) u_l					! Initial velocity on left state
+	read(io,*) p_l					! Initial pressure on left state
+	read(io,*) rho_r				! Initial density on right state
+	read(io,*) u_r					! Initial velocity on right state
+	read(io,*) p_r					! Initial pressure on right
 
 	close(io)
+	
+	write(*,*) "L = ", L
+	write(*,*) "x0 = ", x_0
+	write(*,*) "N = ", N
+	write(*,*) "gamma = ", gamma
+	write(*,*) "Cp = ", Cv
+	write(*,*) "Time = ", Time
+	write(*,*) "CFL = ", CFL
+	write(*,*) "rho_l/rho_r = ", rho_l, "/", rho_r
+	write(*,*) "u_l/u_r = ", u_l, "/", u_r
+	write(*,*) "p_l/p_r = ", p_l, "/", p_r
 
-	call test1D(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r)
+	! call test1D(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r)
 
-	! call FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r)
+	call FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r)
 
 	! H_l = enthalpy(gamma, rho_l, p_l, u_l)
 	! H_r = enthalpy(gamma, rho_r, p_r, u_r)

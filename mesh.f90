@@ -18,22 +18,22 @@ end subroutine
 
 ! create quasi 1D grid
 !
-!	--------------------
-!	|                  |
-!	|				   |
-!	i         i       i+1
-!	|                  |
-!	|                  |
-!	--------------------
+!	---------------------
+!	|                   |
+!	|				    |
+!	i         i        i+1				<- cell and her surfaces
+!	|                   |
+!	|                   |
+!	---------------------
 !
-subroutine createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x)
+subroutine createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x, surface_height)
 	implicit none
 
 	integer									:: N
 	integer 								:: i
 	double precision						:: dx, small_h, BIG_H
 	double precision, dimension(0:N + 1)	:: x
-	double precision, dimension(N + 1)		:: surface_x, height
+	double precision, dimension(N + 1)		:: surface_x, surface_height
 
 	x(0) = - dx / 2.0
 	surface_x(1) = 0.0
@@ -48,15 +48,15 @@ subroutine createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x)
 		! calculation of the height of channel
 		if (surface_x(i) < 1.0) then
 		
-			height(i) = small_h
+			surface_height(i) = small_h
 		
 		else if (surface_x(i) > 2.0) then
 		
-			height(i) = BIG_H
+			surface_height(i) = BIG_H
 		
 		else
 		
-			height(i) = ! осталось придумать прикольную функцию
+			surface_height(i) = small_h ! осталось придумать прикольную функцию
 		
 		end if
 
@@ -65,14 +65,14 @@ subroutine createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x)
 end subroutine
 
 ! deformation quasi 1D grid
-subroutine deformationMesh(N, L, dt, u_left_piston, u_right_piston, u_surface)
+subroutine deformationMesh(N, x, L, dx, dt, u_left_piston, u_right_piston, u_surface)
 	implicit none
 	
 	integer								:: i, N
-	double precision					:: L, dt
+	double precision					:: L, dt, dx
 	double precision					:: u_left_piston, u_right_piston
 	double precision, dimension(N+1)	:: u_surface, surface_x			! u_surface - sounds of surfaces
-	double precision, dimension(0:N+1)	::
+	double precision, dimension(0:N+1)	:: x
 	
 	! calculation of sounds of surfaces and of the surfaces coordinates
 	do i = 1, N + 1
@@ -91,5 +91,5 @@ subroutine deformationMesh(N, L, dt, u_left_piston, u_right_piston, u_surface)
 	end do
 	L = surface_x(N+1)
 	x(N) = L + dx / 2.0
-	
+
 end subroutine
