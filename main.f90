@@ -1,8 +1,6 @@
 program test
 	implicit none
 
-
-
 	character(*), parameter 				:: inputFile = "Input"
 	character(30) 							:: inputFileData
 

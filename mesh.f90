@@ -65,7 +65,7 @@ subroutine createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x, surface_height
 end subroutine
 
 ! deformation quasi 1D grid
-subroutine deformationMesh(N, x, L, dx, dt, u_left_piston, u_right_piston, u_surface)
+subroutine deformationMesh(N, x, L, dx, dt, u_left_piston, u_right_piston, u_surface, surface_x)
 	implicit none
 	
 	integer								:: i, N
@@ -81,6 +81,7 @@ subroutine deformationMesh(N, x, L, dx, dt, u_left_piston, u_right_piston, u_sur
 		surface_x(i) = surface_x(i) + u_surface(i) * dt
 		
 	end do
+	L = surface_x(N+1) - surface_x(1)
 	
 	! calculation of the centers of cells
 	x(0) = - dx / 2.0
