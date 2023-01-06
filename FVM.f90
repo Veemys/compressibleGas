@@ -5,7 +5,7 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 
 	integer										:: nt, N
 	integer 									:: i, j, k
-	integer, parameter							:: n_mon_point = 2
+	integer, parameter							:: n_mon_point = 2, io_time_scan = 1488
 	integer, dimension(n_mon_point)				:: i_mon_point, io_mon_point
 
 	double precision							:: dt, t, Time, CFL, L, x_0
@@ -13,6 +13,8 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 	double precision							:: gamma, Cv
 	double precision							:: rho_l, u_l, p_l, H_l, c_l
 	double precision							:: rho_r, u_r, p_r, H_r, c_r
+	double precision 							:: rho_ll, u_ll, p_ll, rho_lr, u_lr, p_lr 			! for MUSCL
+	double precision							:: rho_rl, u_rl, p_rl, rho_rr, u_rr, p_rr 			! for MUSCL
 	double precision							:: dx, volume, volume_new, small_h, BIG_H
 	double precision							:: x_left_piston, x_right_piston, amplitude_left, amplitude_right, &
 												   frequency_left, frequency_right, u_left_piston, u_right_piston
@@ -28,8 +30,9 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 
 	! creating grid
 	dx = L / N
-	call createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x, surface_height)
-	call writeChannelForm(N, surface_x, surface_height)
+	call createQuasi1DGrid(N, L, x, dx, small_h, BIG_H, surface_x, surface_height)
+	call writeChannelForm(N, x, surface_x, surface_height)
+	! end creating grid
 
 	! set initial conditions
 	do i = 1, N
@@ -47,17 +50,17 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 	end do
 
 	! call BC_transmissive(rho(1), u(1), p(1), rho(0), u(0), p(0))
-	call BC_wall(rho(1), u(1), p(1), rho(0), u(0), p(0))
-	! call BC_piston(rho(1), u(1), p(1), rho(0), u(0), p(0), u_p)
+	! call BC_wall(rho(1), u(1), p(1), rho(0), u(0), p(0))
+	call BC_piston(rho(1), u(1), p(1), rho(0), u(0), p(0), 0.0)
 	
 	! call BC_transmissive(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
 	call BC_wall(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
-	! call BC_piston(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1), u_p)
+	! call BC_piston(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1), 0.0)
 	! end set initial conditions
 	
 	! set monitoring points
-	x_mon_point(1) = 0.3
-	x_mon_point(2) = 0.6
+	x_mon_point(1) = 0.5
+	x_mon_point(2) = 0.8
 	io_mon_point = 6969
 	call findMamaCell(N, x, surface_x, n_mon_point, x_mon_point, i_mon_point)
 	do i = 1, n_mon_point
@@ -78,15 +81,20 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 		
 	end do
 	! end set monitoring points
+	
+	! open file for time scan output
+	open (io_time_scan, file = "time_scan.plt")
+	write(io_time_scan,*) "variables = t, x, rho, u, p"
+	! end open file for time scan output
 
 	! set piston parameters
 	x_left_piston = 0.0
 	x_right_piston = L
 	
-	amplitude_left = 0.1
+	amplitude_left = 0.01
 	amplitude_right = 0.0
 	
-	frequency_left = 1073
+	frequency_left = 1070.0
 	frequency_right = 0.0
 	
 	u_left_piston = 0.0
@@ -104,20 +112,31 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 		nt = nt + 1
 		
 		u_left_piston = veloPiston(amplitude_left, frequency_left, t)
-		x_left_piston = xPiston(x_left_piston, u_left_piston, dt)
-		call deformationMesh(N, x, L, dx, dt, u_left_piston, u_right_piston, u_dot, surface_x)
+		x_left_piston = xPiston(amplitude_left, frequency_left, t)
+		!u_right_piston = veloPiston(amplitude_right, frequency_right, t)
+		!x_right_piston = 1.0 + xPiston(amplitude_right, frequency_right, t)
+		call deformationMesh(N, x, L, dx, dt, x_left_piston, x_right_piston, u_left_piston, u_right_piston, u_dot, surface_x)
 		
 		do i = 1, N
 			
+			! first order
 			! call roeScheme(gamma, Cv, rho(i-1), u(i-1), p(i-1), rho(i), u(i), p(i), u_dot(i), Flux_minus)
 			! call roeScheme(gamma, Cv, rho(i), u(i), p(i), rho(i+1), u(i+1), p(i+1), u_dot(i+1), Flux_plus)
 			call hllScheme(gamma, Cv, rho(i-1), u(i-1), p(i-1), rho(i), u(i), p(i), u_dot(i), Flux_minus)
 			call hllScheme(gamma, Cv, rho(i), u(i), p(i), rho(i+1), u(i+1), p(i+1), u_dot(i+1), Flux_plus)
+			! end first order 
 
-			! c_l = soundSpeed(gamma, (rho(i-1) + rho(i)) / 2.0, (p(i-1) + p(i)) / 2.0, (u(i-1) + u(i)) / 2.0)
-			! c_r = soundSpeed(gamma, (rho(i+1) + rho(i)) / 2.0, (p(i+1) + p(i)) / 2.0, (u(i+1) + u(i)) / 2.0)
-			! dt = CFL * (surface_x(i+1) - surface_x(i)) / max(c_l, c_r)
-
+			! second order
+			! call TVD_MUSCL(i, N, rho, u, p, &
+					 ! rho_ll, u_ll, p_ll, rho_lr, u_lr, p_lr, &
+					 ! rho_rl, u_rl, p_rl, rho_rr, u_rr, p_rr)
+			! ! write(*,*) rho_ll, u_ll, p_ll, rho_lr, u_lr, p_lr, rho_rl, u_rl, p_rl, rho_rr, u_rr, p_rr
+			! ! call roeScheme(gamma, Cv, rho_ll, u_ll, p_ll, rho_lr, u_lr, p_lr, u_dot(i), Flux_minus)
+			! ! call roeScheme(gamma, Cv, rho_rl, u_rl, p_rl, rho_rr, u_rr, p_rr, u_dot(i+1), Flux_plus)
+			! call hllScheme(gamma, Cv, rho_ll, u_ll, p_ll, rho_lr, u_lr, p_lr, u_dot(i), Flux_minus)
+			! call hllScheme(gamma, Cv, rho_rl, u_rl, p_rl, rho_rr, u_rr, p_rr, u_dot(i+1), Flux_plus)
+			! end second order
+			
 			H(i) = enthalpy(gamma, rho(i), p(i), u(i))
 			call calcVariables(rho(i), u(i), p(i), H(i), w)
 			
@@ -141,24 +160,33 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 		end do
 		
 		! set boundary conditions
-		
 		! call BC_transmissive(rho(1), u(1), p(1), rho(0), u(0), p(0))
-		call BC_wall(rho(1), u(1), p(1), rho(0), u(0), p(0))
-		! call BC_piston(rho(1), u(1), p(1), rho(0), u(0), p(0), u_p)
+		! call BC_wall(rho(1), u(1), p(1), rho(0), u(0), p(0))
+		call BC_piston(rho(1), u(1), p(1), rho(0), u(0), p(0), u_left_piston)
 		
 		! call BC_transmissive(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
 		call BC_wall(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
-		! call BC_piston(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1), u_p)
-		
+		! call BC_piston(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1), u_right_piston)
 		! end set boundary conditions
 		
-		write(*,*) nt, t
+		if (mod(nt, 100) == 0) then
+			write(*,*) nt, t
+			! write(*,*) u(N/2)
+		end if
+		
+		! call writeTimeScan(t, N, x, rho, u, p)
 
 	end do
+	close(io_time_scan)
 	
-	write(*,*) "Time = ", t
-
-	call writeField(filename_output, N, x, rho, u, p)
+	! write(*,*) "Time = ", t
+	! write(*,*) u_left_piston, x_left_piston
+	! open(685, file = "udots.plt")
+	! write(685,*) "variables = x, u"
+	! do i = 1, N + 1
+		! write(685,*) surface_x(i), u_dot(i)
+	! end do
+	call writeField(filename_output, N, x, surface_x, rho, u, p)
 
 end subroutine
 
@@ -172,50 +200,5 @@ subroutine eulerTimeScheme(w_new, w, volume, volume_new, dt, Flux_plus, Flux_min
 	
 	w_new = w * volume / volume_new - dt / volume_new * (Flux_plus * surface_height_r - Flux_minus * surface_height_l)
 	w_new(2) = w_new(2) + (p_l + p_r) / 2.0 * (surface_height_r - surface_height_l)
-
-end subroutine
-
-! implicit predictor-corrector time scheme
-subroutine implicitTimeScheme(N, gamma, rho, u, p, w_new, w, volume, volume_new, dt, Flux_plus, Flux_minus, &
-							  surface_height_l, surface_height_r, p_l, p_r)
-	implicit none
-	
-	integer								:: N
-	double precision					:: gamma, p_l, p_r, dt, volume, volume_new
-	double precision					:: surface_height_l, surface_height_r
-	double precision, dimension(3)		:: w, w_new, Flux_minus, Flux_plus
-	double precision, dimension(0:N+1)	:: rho, u, p
-	
-	call calcVariablesFromVector(gamma, rho, u, p, w)
-	call predictor(N)
-	call corrector(N)
-
-end subroutine
-
-! predictor
-subroutine predictor(N)
-	implicit none
-	
-	integer								:: N
-	double precision					:: gamma, p_l, p_r, dt, volume, volume_new
-	double precision					:: surface_height_l, surface_height_r
-	double precision, dimension(3)		:: w, w_new, Flux_minus, Flux_plus
-	double precision, dimension(0:N+1)	:: rho, u, p
-	
-	
-
-end subroutine
-
-! corrector
-subroutine corrector(N)
-	implicit none
-	
-	integer								:: N
-	double precision					:: gamma, p_l, p_r, dt, volume, volume_new
-	double precision					:: surface_height_l, surface_height_r
-	double precision, dimension(3)		:: w, w_new, Flux_minus, Flux_plus
-	double precision, dimension(0:N+1)	:: rho, u, p
-	
-	
 
 end subroutine

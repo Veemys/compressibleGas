@@ -18,13 +18,11 @@ program test
 	double precision						:: u_dot
 	double precision						:: enthalpy
 	double precision, dimension(3)			:: Flux
-
-	open(io, file = inputFile)
-	read(io,*) inputFileData
-	close(io)
-
-	! call readParametersFromFile(io, inputFileData, gamma, Cv, rho_l, u_l, p_l, rho_r, u_r, p_r, u_dot)
-
+	
+	! **********************************
+	! *			 расчет трубы		   *
+	! **********************************
+	
 	open(io, file = inputFileData)
 	
 	read(io,*) L				 	! Domain length
@@ -57,6 +55,16 @@ program test
 	! call test1D(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r)
 
 	call FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r)
+
+	! **********************************
+	! *	тест расчета потоков на гранях *
+	! **********************************
+	
+	! open(io, file = inputFile)
+	! read(io,*) inputFileData
+	! close(io)
+
+	! call readParametersFromFile(io, inputFileData, gamma, Cv, rho_l, u_l, p_l, rho_r, u_r, p_r, u_dot)
 
 	! H_l = enthalpy(gamma, rho_l, p_l, u_l)
 	! H_r = enthalpy(gamma, rho_r, p_r, u_r)

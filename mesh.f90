@@ -26,12 +26,12 @@ end subroutine
 !	|                   |
 !	---------------------
 !
-subroutine createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x, surface_height)
+subroutine createQuasi1DGrid(N, L, x, dx, small_h, BIG_H, surface_x, surface_height)
 	implicit none
 
 	integer									:: N
 	integer 								:: i
-	double precision						:: dx, small_h, BIG_H
+	double precision						:: dx, small_h, BIG_H, L
 	double precision, dimension(0:N + 1)	:: x
 	double precision, dimension(N + 1)		:: surface_x, surface_height
 
@@ -46,17 +46,17 @@ subroutine createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x, surface_height
 		surface_x(i) = x(i-1) + dx / 2.0
 
 		! calculation of the height of channel
-		if (surface_x(i) < 1.0) then
+		if (surface_x(i) < L / 3.0) then
 		
 			surface_height(i) = small_h
 		
-		else if (surface_x(i) > 2.0) then
+		else if (surface_x(i) > 2.0 * L / 3.0) then
 		
 			surface_height(i) = BIG_H
 		
 		else
 		
-			surface_height(i) = small_h ! осталось придумать прикольную функцию
+			surface_height(i) = small_h + (BIG_H - small_h) * sin(surface_x(i) - (L / 3.0)) / sin(L / 3.0)
 		
 		end if
 
@@ -65,32 +65,39 @@ subroutine createQuasi1DGrid(N, x, dx, small_h, BIG_H, surface_x, surface_height
 end subroutine
 
 ! deformation quasi 1D grid
-subroutine deformationMesh(N, x, L, dx, dt, u_left_piston, u_right_piston, u_surface, surface_x)
+subroutine deformationMesh(N, x, L, dx, dt, x_left_piston, x_right_piston, u_left_piston, u_right_piston, u_surface, surface_x)
 	implicit none
 	
 	integer								:: i, N
 	double precision					:: L, dt, dx
-	double precision					:: u_left_piston, u_right_piston
+	double precision					:: x_left_piston, x_right_piston, u_left_piston, u_right_piston
 	double precision, dimension(N+1)	:: u_surface, surface_x			! u_surface - sounds of surfaces
 	double precision, dimension(0:N+1)	:: x
 	
 	! calculation of sounds of surfaces and of the surfaces coordinates
-	do i = 1, N + 1
+	surface_x(1) = x_left_piston
+	u_surface(1) = u_left_piston
+	surface_x(N+1) = x_right_piston
+	u_surface(N+1) = u_right_piston
+	! write(*,*) surface_x(1), surface_x(n+1) 
+	! write(*,*) u_surface(1), u_surface(n+1)
+	! write(*,*)
+	do i = 2, N
 		
-		u_surface(i) = u_left_piston + (u_right_piston - u_left_piston) / L * surface_x(i)
+		! u_surface(i) = u_surface(1) + (u_right_piston - u_left_piston) / L * surface_x(i)
+		u_surface(i) = u_surface(1) + ((surface_x(i) - surface_x(1)) * (u_surface(N+1) - u_surface(1))) / (surface_x(N+1) - surface_x(1))
 		surface_x(i) = surface_x(i) + u_surface(i) * dt
 		
 	end do
-	L = surface_x(N+1) - surface_x(1)
 	
 	! calculation of the centers of cells
-	x(0) = - dx / 2.0
+	x(0) = surface_x(1) - dx / 2.0
 	do i = 1, N
 	
 		x(i) = (surface_x(i) + surface_x(i+1)) / 2.0
 		
 	end do
-	L = surface_x(N+1)
-	x(N) = L + dx / 2.0
+	L = surface_x(N+1) - surface_x(1)
+	x(N+1) = surface_x(N+1) + dx / 2.0 ! L + dx / 2.0
 
 end subroutine

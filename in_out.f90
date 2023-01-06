@@ -50,20 +50,21 @@ subroutine outputResult(Flux)
 end subroutine
 
 ! output fields to file
-subroutine writeField(filename, N, x,rho, u, p)
+subroutine writeField(filename, N, x, surface_x, rho, u, p)
 	implicit none
 
 	character(30)							:: filename
 	integer, parameter						:: io = 12
 	integer									:: i, N
+	double precision, dimension(N+1)		:: surface_x
 	double precision, dimension(0:N+1)		:: x, rho, u, p
 
 	open(io, file = filename)
 
-	write(io,*) "variables = x, rho, u, p"
+	write(io,*) "variables = x, surf_x, rho, u, p"
 	do i = 1, N
 		
-		write(io,*) x(i), rho(i), u(i), p(i)
+		write(io,*) x(i), surface_x(i), rho(i), u(i), p(i)
 		
 	end do
 
@@ -72,22 +73,39 @@ subroutine writeField(filename, N, x,rho, u, p)
 end subroutine
 
 ! output channel form to file
-subroutine writeChannelForm(N, surface_x, surface_height)
+subroutine writeChannelForm(N, x, surface_x, surface_height)
 	implicit none
 	
 	integer, parameter					:: io = 666
 	integer								:: i, N
 	double precision, dimension(N+1)	:: surface_x, surface_height
+	double precision, dimension(0:N+1)	:: x
 	
 	open (io, file = "channel_form.plt")
 	
-	write(io,*) "variables = x, h"
+	write(io,*) "variables = surf_x, x, h"
 	do i = 1, N + 1
 		
-		write(io,*) surface_x(i), surface_height(i)
+		write(io,*) surface_x(i), x(i), surface_height(i)
 		
 	end do
 	
 	close(io)
 	
+end subroutine
+
+! output fields in one time step for time scan
+subroutine writeTimeScan(t, N, x, rho, u, p)
+	implicit none
+	
+	integer 							:: i, N
+	double precision					:: t
+	double precision, dimension(0:N+1)	:: x, rho, u, p
+	
+	do i = 1, N
+		
+		write(1488,*) t, x(i), rho(i), u(i), p(i)
+		
+	end do
+
 end subroutine

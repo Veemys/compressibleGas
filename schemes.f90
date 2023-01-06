@@ -244,3 +244,150 @@ subroutine vanLeerScheme(gamma, Cv, rho_l, u_l, p_l, rho_r, u_r, p_r, Flux)
 	Flux = F_l + F_r
 
 end subroutine
+
+
+! TVD scheme
+subroutine TVD_MUSCL(i, N, rho, u, p, &
+					 rho_ll, u_ll, p_ll, rho_lr, u_lr, p_lr, &
+					 rho_rl, u_rl, p_rl, rho_rr, u_rr, p_rr)
+	implicit none
+
+	integer									:: i, N
+	double precision						:: rho_ll, u_ll, p_ll, rho_lr, u_lr, p_lr
+	double precision						:: rho_rl, u_rl, p_rl, rho_rr, u_rr, p_rr
+	double precision, dimension(0:N + 1)	:: rho, u, p
+	double precision						:: limiter
+
+	if (i == 1) then
+
+		rho_ll = rho(0)
+		u_ll = u(0)
+		p_ll = p(0)
+
+		rho_lr = rho(i) - 0.5 * limiter(rho(i-1), rho(i), rho(i+1)) * (rho(i) - rho(i - 1))
+		u_lr = u(i) - 0.5 * limiter(u(i-1), u(i), u(i+1)) * (u(i) - u(i - 1))
+		p_lr = p(i) - 0.5 * limiter(p(i-1), p(i), p(i+1)) * (p(i) - p(i - 1))
+
+		rho_rl = rho(i) + 0.5 * limiter(rho(i-1), rho(i), rho(i+1)) * (rho(i) - rho(i-1))
+		u_rl = u(i) + 0.5 * limiter(u(i-1), u(i), u(i+1)) * (u(i) - u(i-1))
+		p_rl = p(i) + 0.5 * limiter(p(i-1), p(i), p(i+1)) * (p(i) - p(i-1))
+
+		rho_rr = rho(i+1) - 0.5 * limiter(rho(i), rho(i+1), rho(i+2)) * (rho(i+1) - rho(i))
+		u_rr = u(i+1) - 0.5 * limiter(u(i), u(i+1), u(i+2)) * (u(i+1) - u(i))
+		p_rr = p(i+1) - 0.5 * limiter(p(i), p(i+1), p(i+2)) * (p(i+1) - p(i))
+
+	else if (i == N) then
+
+		rho_ll = rho(i-1) + 0.5 * limiter(rho(i-2), rho(i-1), rho(i)) * (rho(i-1) - rho(i-2))
+		u_ll = u(i-1) + 0.5 * limiter(u(i-2), u(i-1), u(i)) * (u(i-1) - u(i-2))
+		p_ll = p(i-1) + 0.5 * limiter(p(i-2), p(i-1), p(i)) * (p(i-1) - p(i-2))
+
+		rho_lr = rho(i) - 0.5 * limiter(rho(i-1), rho(i), rho(i+1)) * (rho(i) - rho(i - 1))
+		u_lr = u(i) - 0.5 * limiter(u(i-1), u(i), u(i+1)) * (u(i) - u(i - 1))
+		p_lr = p(i) - 0.5 * limiter(p(i-1), p(i), p(i+1)) * (p(i) - p(i - 1))
+
+		rho_rl = rho(i) + 0.5 * limiter(rho(i-1), rho(i), rho(i+1)) * (rho(i) - rho(i-1))
+		u_rl = u(i) + 0.5 * limiter(u(i-1), u(i), u(i+1)) * (u(i) - u(i-1))
+		p_rl = p(i) + 0.5 * limiter(p(i-1), p(i), p(i+1)) * (p(i) - p(i-1))
+
+		rho_rr = rho(n+1)
+		u_rr = u(n+1)
+		p_rr = p(n+1)
+
+	else
+
+		rho_ll = rho(i-1) + 0.5 * limiter(rho(i-2), rho(i-1), rho(i)) * (rho(i-1) - rho(i-2))
+		u_ll = u(i-1) + 0.5 * limiter(u(i-2), u(i-1), u(i)) * (u(i-1) - u(i-2))
+		p_ll = p(i-1) + 0.5 * limiter(p(i-2), p(i-1), p(i)) * (p(i-1) - p(i-2))
+
+		rho_lr = rho(i) - 0.5 * limiter(rho(i-1), rho(i), rho(i+1)) * (rho(i) - rho(i-1))
+		u_lr = u(i) - 0.5 * limiter(u(i-1), u(i), u(i+1)) * (u(i) - u(i - 1))
+		p_lr = p(i) - 0.5 * limiter(p(i-1), p(i), p(i+1)) * (p(i) - p(i - 1))
+
+		rho_rl = rho(i) + 0.5 * limiter(rho(i-1), rho(i), rho(i+1)) * (rho(i) - rho(i-1))
+		u_rl = u(i) + 0.5 * limiter(u(i-1), u(i), u(i+1)) * (u(i) - u(i-1))
+		p_rl = p(i) + 0.5 * limiter(p(i-1), p(i), p(i+1)) * (p(i) - p(i-1))
+
+		rho_rr = rho(i+1) - 0.5 * limiter(rho(i), rho(i+1), rho(i+2)) * (rho(i+1) - rho(i))
+		u_rr = u(i+1) - 0.5 * limiter(u(i), u(i+1), u(i+2)) * (u(i+1) - u(i))
+		p_rr = p(i+1) - 0.5 * limiter(p(i), p(i+1), p(i+2)) * (p(i+1) - p(i))
+
+	end if
+
+end subroutine
+
+double precision function limiter(u_prev, u, u_next)
+	implicit none
+	
+	double precision				:: r
+	double precision				:: u_prev, u, u_next
+
+	r = (u_next - u) / (u - u_prev + 1e-16)
+	if (r <= 0) then
+
+		limiter = 0
+		return
+
+	end if
+
+	! limiter = min(1.0, r)									! minmod
+	! limiter = (r**2 + r) / (r**2 + 1)						! van Albada
+	! limiter = 2.0 * r / (r + 1.0)							! van Leer
+	limiter = max(min(2.0 * r, 1.0), min(r, 2.0))			! superbee
+
+end function
+
+! вадим
+! subroutine TVD_MUSCL(R, P, U, n, R_f_tvd, P_f_tvd, U_f_tvd)
+! 	implicit none
+
+! 	integer n, i
+! 	Real(8) R(0:n+1), P(0:n+1), U(0:n+1)
+! 	Real(8) R_f_tvd(1:n+1,1:2), P_f_tvd(1:n+1,1:2), U_f_tvd(1:n+1,1:2)
+! 	Real(8) r_r, r_p, r_u
+! 	Real(8) limiter
+
+! 	R_f_tvd(1,1) = R(0) ! пока определим значнеие слева на первую границу, как просто значение из заграничной ячейки
+! 	P_f_tvd(1,1) = P(0)
+! 	U_f_tvd(1,1) = U(0)
+! 	R_f_tvd(n+1,2) = R(n+1) ! аналогично для последней грани
+! 	P_f_tvd(n+1,2) = P(n+1)
+! 	U_f_tvd(n+1,2) = U(n+1)
+
+! 	do i = 1 , n
+	
+! 		R_f_tvd(i,2) = R(i) - 0.5*limiter(R(i+1)-R(i), R(i)-R(i-1) )*(R(i)-R(i-1))
+! 		R_f_tvd(i+1,1) = R(i) + 0.5*limiter(R(i+1)-R(i), R(i)-R(i-1) )*(R(i)-R(i-1))
+
+! 		P_f_tvd(i,2) = P(i) - 0.5*limiter(P(i+1)-P(i) , P(i)-P(i-1) )*(P(i)-P(i-1))
+! 		P_f_tvd(i+1,1) = P(i) + 0.5*limiter(P(i+1)-P(i) , P(i)-P(i-1) )*(P(i)-P(i-1))
+
+! 		U_f_tvd(i,2) = U(i) - 0.5*limiter(U(i+1)-U(i), U(i)-U(i-1))*(U(i)-U(i-1))
+! 		U_f_tvd(i+1,1) = U(i) + 0.5*limiter( U(i+1)-U(i), U(i)-U(i-1) )*(U(i)-U(i-1))
+		
+! 	end do
+
+! end subroutine
+
+! function limiter(r1, r2 )
+! 	implicit none
+! 	Real(8) limiter, r , r1 , r2
+
+! 	if (r2 < 1.e-12 ) then
+	
+! 		limiter=0.
+! 		return
+		
+! 	else
+
+! 		r=r1/r2
+! 		if (r<1e-12) then
+! 			limiter=0.
+! 		else
+! 			limiter=(r**2 + r)/(r**2 + 1.0) ! симметричный
+! 			!limiter = (2.*r)/(r+1.) ! тоже симметричный
+! 		end if
+		
+! 	end if
+
+! end function
