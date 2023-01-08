@@ -6,7 +6,7 @@ subroutine findMamaCell(N, x, surface_x, n_mon_point, x_mon_point, i_mon_point)
 	integer										:: i
 	integer, dimension(n_mon_point)				:: i_mon_point
 	double precision, dimension(n_mon_point)	:: x_mon_point
-	double precision, dimension(0,N+1)			:: x
+	double precision, dimension(0:N+1)			:: x
 	double precision, dimension(N+1)			:: surface_x
 
 	do k = 1, n_mon_point

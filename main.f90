@@ -23,6 +23,10 @@ program test
 	! *			 расчет трубы		   *
 	! **********************************
 	
+	open(io, file = inputFile)
+	read(io,*) inputFileData
+	close(io)
+	
 	open(io, file = inputFileData)
 	
 	read(io,*) L				 	! Domain length
