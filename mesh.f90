@@ -94,7 +94,8 @@ subroutine deformationMesh(N, x, L, dx, dt, x_left_piston, x_right_piston, u_lef
 	do i = 2, N
 
 		! u_surface(i) = u_surface(1) + (u_right_piston - u_left_piston) / L * surface_x(i)
-		u_surface(i) = u_surface(1) + ((surface_x(i) - surface_x(1)) * (u_surface(N+1) - u_surface(1))) / (surface_x(N+1) - surface_x(1))
+		! u_surface(i) = u_surface(1) + ((surface_x(i) - surface_x(1)) * (u_surface(N+1) - u_surface(1))) / (surface_x(N+1) - surface_x(1))
+		u_surface(i) = u_surface(1) + (u_surface(N+1) - u_surface(1)) / (surface_x(N+1) - surface_x(1)) * surface_x(i)
 		surface_x(i) = surface_x(i) + u_surface(i) * dt
 
 	end do

@@ -5,7 +5,7 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 
 	integer										:: nt, N
 	integer 									:: i, j, k
-	integer, parameter							:: n_mon_point = 2, io_time_scan = 1488
+	integer, parameter							:: n_mon_point = 3, io_time_scan = 1488
 	integer, dimension(n_mon_point)				:: i_mon_point, io_mon_point
 
 	double precision							:: dt, t, Time, CFL, L, x_0
@@ -24,10 +24,12 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 	double precision, dimension(0:N+1)			:: x, rho, u, p, H, rho_new, u_new, p_new			! x - centers of cells
 	double precision, dimension(N+1)			:: surface_x, surface_height, u_dot
 	double precision, dimension(n_mon_point)	:: x_mon_point
+	
+	double precision							:: maxu
 
 	u_dot = 0.0
 	small_h = 1.0
-	BIG_H = 2. ! small_h
+	BIG_H = 3.0 * small_h
 
 	! creating grid
 	dx = L / N
@@ -51,17 +53,18 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 	end do
 
 	! call BC_transmissive(rho(1), u(1), p(1), rho(0), u(0), p(0))
-	call BC_wall(rho(1), u(1), p(1), rho(0), u(0), p(0))
-	! call BC_piston(rho(1), u(1), p(1), rho(0), u(0), p(0), 0.0)
+	! call BC_wall(rho(1), u(1), p(1), rho(0), u(0), p(0))
+	call BC_piston(rho(1), u(1), p(1), rho(0), u(0), p(0), 0.0)
 
 	! call BC_transmissive(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
-	call BC_wall(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
-	! call BC_piston(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1), 0.0)
+	! call BC_wall(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
+	call BC_piston(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1), 0.0)
 	! end set initial conditions
 
 	! set monitoring points
 	x_mon_point(1) = 0.5
-	x_mon_point(2) = 0.8
+	x_mon_point(2) = 0.1
+	x_mon_point(3) = 0.9
 	io_mon_point = 6969
 	call findMamaCell(N, x, surface_x, n_mon_point, x_mon_point, i_mon_point)
 	do i = 1, n_mon_point
@@ -92,32 +95,34 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 	x_left_piston = 0.0
 	x_right_piston = L
 
-	amplitude_left = 0.0
-	amplitude_right = 0.0
+	amplitude_left = 0.005
+	amplitude_right = 0.005
 
-	frequency_left = 0.0
-	frequency_right = 0.0
+	frequency_left = 500.0
+	frequency_right = 500.0
 
 	u_left_piston = 0.0
 	u_right_piston = 0.0
 	! end set piston parameters
 
 	t = 0
-	nt = 0
 	c_l = soundSpeed(gamma, rho(0), p(0), u(0))
 	c_r = soundSpeed(gamma, rho(1), p(1), u(1))
 	dt = CFL * dx / max(c_l, c_r)
+	nt = Time / dt
+	write(io_time_scan,*) "ZONE I=", nt, ", J=", N
+	nt = 0
 	do while (t < Time)
 
 		t = t + dt
 		nt = nt + 1
 
-		! u_left_piston = veloPiston(amplitude_left, frequency_left, t)
-		! x_left_piston = xPiston(amplitude_left, frequency_left, t)
-		! u_right_piston = veloPiston(amplitude_right, frequency_right, t)
-		! x_right_piston = 1.0 + xPiston(amplitude_right, frequency_right, t)
-		! call deformationMesh(N, x, L, dx, dt, x_left_piston, x_right_piston, u_left_piston, u_right_piston, &
-		! 					   u_dot, surface_x, surface_height, small_h, BIG_H)
+		u_left_piston = - veloPiston(amplitude_left, frequency_left, t) ! - veloPiston(amplitude_left, frequency_left, t)
+		x_left_piston = - xPiston(amplitude_left, frequency_left, t) ! - xPiston(amplitude_left, frequency_left, t)
+		u_right_piston = veloPiston(amplitude_right, frequency_right, t)
+		x_right_piston = 1.0 + xPiston(amplitude_right, frequency_right, t)
+		call deformationMesh(N, x, L, dx, dt, x_left_piston, x_right_piston, u_left_piston, u_right_piston, &
+							 u_dot, surface_x, surface_height, small_h, BIG_H)
 
 		do i = 1, N
 
@@ -164,31 +169,33 @@ subroutine FVM(L, x_0, N, gamma, Cv, Time, CFL, rho_l, u_l, p_l, rho_r, u_r, p_r
 
 		! set boundary conditions
 		! call BC_transmissive(rho(1), u(1), p(1), rho(0), u(0), p(0))
-		call BC_wall(rho(1), u(1), p(1), rho(0), u(0), p(0))
-		! call BC_piston(rho(1), u(1), p(1), rho(0), u(0), p(0), u_left_piston)
+		! call BC_wall(rho(1), u(1), p(1), rho(0), u(0), p(0))
+		call BC_piston(rho(1), u(1), p(1), rho(0), u(0), p(0), u_left_piston)
 
 		! call BC_transmissive(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
-		call BC_wall(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
-		! call BC_piston(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1), u_right_piston)
+		! call BC_wall(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1))
+		call BC_piston(rho(N), u(N), p(N), rho(N+1), u(N+1), p(N+1), u_right_piston)
 		! end set boundary conditions
 
-		if (mod(nt, 100) == 0) then
+		if (mod(nt, 1000) == 0) then
 			write(*,*) nt, t
-			! write(*,*) u(N/2)
+			write(*,*) x_left_piston, x_right_piston - 1.0
+			write(*,*) u_left_piston, u_right_piston
+			write(*,*) rho(N/2), u(N/2), p(N/2)
 		end if
-
+		
 		! call writeTimeScan(t, N, x, rho, u, p)
 
 	end do
 	close(io_time_scan)
 
-	! write(*,*) "Time = ", t
-	! write(*,*) u_left_piston, x_left_piston
-	! open(685, file = "udots.plt")
-	! write(685,*) "variables = x, u"
-	! do i = 1, N + 1
-		! write(685,*) surface_x(i), u_dot(i)
-	! end do
+	write(*,*) "Time = ", t
+	write(*,*) u_left_piston, x_left_piston
+	open(685, file = "udots.plt")
+	write(685,*) "variables = x, u"
+	do i = 1, N + 1
+		write(685,*) surface_x(i), u_dot(i)
+	end do
 	call writeField(filename_output, N, x, surface_x, rho, u, p)
 
 end subroutine
