@@ -50,21 +50,21 @@ subroutine outputResult(Flux)
 end subroutine
 
 ! output fields to file
-subroutine writeField(filename, N, x, surface_x, rho, u, p)
+subroutine writeField(filename, N, x, surface_x, rho, u, p, temp)
 	implicit none
 
 	character(30)							:: filename
 	integer, parameter						:: io = 12
 	integer									:: i, N
 	double precision, dimension(N+1)		:: surface_x
-	double precision, dimension(0:N+1)		:: x, rho, u, p
+	double precision, dimension(0:N+1)		:: x, rho, u, p, temp
 
 	open(io, file = filename)
 
-	write(io,*) "variables = x, surf_x, rho, u, p"
+	write(io,*) "variables = x, surf_x, rho, u, p, temp"
 	do i = 1, N
 		
-		write(io,*) x(i), surface_x(i), rho(i), u(i), p(i)
+		write(io,*) x(i), surface_x(i), rho(i), u(i), p(i), temp(i)
 		
 	end do
 
